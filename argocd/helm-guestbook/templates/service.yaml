@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: guestbook-svc
-    labels:
+  labels:
     app: {{ template "helm-guestbook.name" . }}
     chart: {{ template "helm-guestbook.chart" . }}
     release: {{ .Release.Name }}
