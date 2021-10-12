@@ -29,6 +29,10 @@ spec:
                 - "guestbook.{{ .Values.spec.clusterFQDNs.private }}"
                 - "*.guestbook.{{ .Values.spec.clusterFQDNs.private }}"
               secretName: 'guestbook.{{ .Values.spec.clusterFQDNs.private }}-secret'
+            - hosts:
+                - "guestbook.{{ .Values.spec.clusterFQDNs.personal }}"
+                - "*.guestbook.{{ .Values.spec.clusterFQDNs.personal }}"
+              secretName: 'guestbook.{{ .Values.spec.clusterFQDNs.personal }}-secret'
   syncPolicy:
     automated:
       prune: yes
