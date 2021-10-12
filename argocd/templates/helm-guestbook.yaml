@@ -29,3 +29,13 @@ spec:
                 - "guestbook.{{ .Values.spec.clusterFQDNs.private }}"
                 - "*.guestbook.{{ .Values.spec.clusterFQDNs.private }}"
               secretName: 'guestbook.{{ .Values.spec.clusterFQDNs.private }}-secret'
+  syncPolicy:
+    automated:
+      prune: yes
+      selfHeal: yes
+      allowEmpty: yes
+    syncOptions:
+      - Validate=false
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
