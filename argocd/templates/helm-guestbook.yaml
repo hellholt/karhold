@@ -20,6 +20,7 @@ spec:
           enabled: yes
           annotations:
             cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+            kubernetes.io/ingress.class: 'traefik'
           path: '/'
           hosts:
             - 'guestbook.{{ .Values.spec.clusterFQDNs.private }}'
