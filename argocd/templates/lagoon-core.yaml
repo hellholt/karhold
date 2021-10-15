@@ -16,9 +16,20 @@ spec:
     targetRevision: {{ .Values.spec.source.targetRevision }}
     helm:
       values: |
-        harborAdminPassword: 'omgiloveyou'
         elasticsearchURL: "http://logs.example.com/"
         harborURL: "https://harbor-core.{{ .Values.spec.clusterFQDNs.private }}/"
+        harborAdminPassword: 'omgiloveyou'
+        kibanaURL: https://none.com
+        logsDBAdminPassword: none
+        s3FilesAccessKeyID: none
+        s3FilesBucket: none
+        s3FilesHost: none
+        s3FilesSecretAccessKey: none
+        s3FilesRegion: none
+        s3BAASAccessKeyID: none
+        s3BAASSecretAccessKey: none
+        imageTag: v2.0.0-alpha.9
+        registry: none.com
         api:
           ingress:
             enabled: yes
