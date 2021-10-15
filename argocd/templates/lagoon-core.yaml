@@ -30,6 +30,9 @@ spec:
         s3BAASSecretAccessKey: none
         imageTag: v2.0.0-alpha.9
         registry: none.com
+        sshHostKeyED25519: none
+        sshHostKeyRSA: none
+
         api:
           ingress:
             enabled: yes
