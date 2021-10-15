@@ -1,4 +1,6 @@
 spec:
+  easyPassword: 'omgiloveyou'
+  githubToken: ''
   clusterFQDNs:
     private: 'karhold.hellholt.net'
     personal: 'karhold.bitterbridge.net'

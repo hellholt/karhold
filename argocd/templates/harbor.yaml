@@ -1,0 +1,96 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: harbor
+    server: {{ .Values.spec.destination.server }}
+  project: default
+  source:
+    path: {{ .Values.spec.source.repoPath }}/harbor
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    helm:
+      values: |
+        expose:
+          type: ingress
+          tls:
+            enabled: no
+          ingress:
+            hosts:
+              core: harbor-core.{{ .Values.spec.clusterFQDNs.private }}
+              notary: harbor-notary.{{ .Values.spec.clusterFQDNs.private }}
+            controller: default
+            annotations:
+              ingress.kubernetes.io/proxy-body-size: "0"
+            notary:
+              annotations: {}
+            harbor:
+              annotations: {}
+        externalURL: https://harbor-core.{{ .Values.spec.clusterFQDNs.personal }}
+        internalTLS:
+          enabled: no
+        persistence:
+          enabled: yes
+          resourcePolicy: "keep"
+          persistentVolumeClaim:
+            registry:
+              storageClass: "nfs-client"
+              subPath: ""
+              accessMode: ReadWriteMany
+              size: 5Gi
+            chartmuseum:
+              storageClass: "nfs-client"
+              subPath: ""
+              accessMode: ReadWriteMany
+              size: 5Gi
+            jobservice:
+              storageClass: "nfs-client"
+              subPath: "harbor/jobservice"
+              accessMode: ReadWriteMany
+              size: 1Gi
+            database:
+              storageClass: "local-storage"
+              subPath: "harbor/db"
+              accessMode: ReadWriteOnce
+              size: 1Gi
+            redis:
+              storageClass: "local-storage"
+              subPath: "harbor/redis"
+              accessMode: ReadWriteOnce
+              size: 1Gi
+            trivy:
+              storageClass: "nfs-client"
+              subPath: ""
+              accessMode: ReadWriteMany
+              size: 5Gi
+          imageChartStorage:
+            disableredirect: yes
+            type: filesystem
+            filesystem:
+              rootdirectory: /storage
+        imagePullPolicy: IfNotPresent
+        imagePullSecrets:
+        updateStrategy:
+          type: RollingUpdate
+        logLevel: info
+        harborAdminPassword: "{{ .Values.spec.easyPassword }}"
+        trivy:
+          enabled: yes
+          insecure: yes
+          gitHubToken: "{{ .Values.spec.githubToken }}"
+          skipUpdate: no
+  syncPolicy:
+    automated:
+      prune: yes
+      selfHeal: yes
+      allowEmpty: yes
+    syncOptions:
+      - Validate=false
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
