@@ -1,0 +1,749 @@
+# These values must be set on install, as they don't have sensible defaults.
+
+# harborAdminPassword:
+# elasticsearchURL:
+# harborURL:
+# kibanaURL:
+# registry:
+# sshHostKeyED25519:
+# sshHostKeyRSA:
+# s3BAASSecretAccessKey:
+# s3BAASAccessKeyID:
+# s3FilesAccessKeyID:
+# s3FilesBucket:
+# s3FilesHost:
+# s3FilesSecretAccessKey:
+
+# These values are optional.
+
+# overwriteKubectlBuildDeployDindImage:
+
+# These values are optional depending on the services Lagoon is integrated with
+# in your environment.
+
+# gitlabAPIToken:
+# gitlabAPIURL:
+# bitbucketAPIToken:
+# bitbucketAPIURL:
+# s3Region:
+
+# These values may be set on install, otherwise the chart tries to guess
+# sensible defaults.
+
+# keycloakAPIURL: https://keycloak.example.com/auth
+# lagoonAPIURL: https://api.example.com/graphql
+# lagoonUIURL: https://ui.example.com
+# lagoonWebhookURL: https://webhook-handler.example.com
+
+# These values are randomly generated on install if not otherwise defined.
+
+# apiDBPassword:
+# jwtSecret:
+# keycloakAdminPassword:
+# keycloakAPIClientSecret:
+# keycloakAuthServerClientSecret:
+# keycloakDBPassword:
+# keycloakLagoonAdminPassword:
+# logsDBAdminPassword:
+# rabbitMQPassword:
+# redisPassword:
+# k8upBackupBucketName:
+
+# These values are the chart defaults, but can be overridden.
+imagePullSecrets: []
+
+rabbitMQUsername: lagoon
+
+k8upS3Endpoint: ""
+
+# Set to an empty string to support Harbor v1.x.x
+harborAPIVersion: v2.0
+
+# this default podSecurityContext is set for all services and can be overridden
+# on the service level.
+podSecurityContext:
+  fsGroup: 10001
+  runAsGroup: 0
+  runAsUser: 10000
+
+# this default image tag is set for all services and can be overridden
+# on the service level, if not set it falls back to chart appVersion.
+imageTag: ""
+
+# the following services are part of the lagoon-core chart
+
+api:
+  replicaCount: 2
+  image:
+    repository: uselagoon/api
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: api.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+apiDB:
+  image:
+    repository: uselagoon/api-db
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3306
+
+  podAnnotations:
+    appuio.ch/backupcommand: >
+      /bin/sh -c "mysqldump --max-allowed-packet=500M --events --routines
+      --quick --add-locks --no-autocommit --single-transaction --all-databases"
+    backup.appuio.ch/file-extension: .api-db.sql
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  storageSize: 128Gi
+
+apiRedis:
+  image:
+    repository: uselagoon/api-redis
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 6379
+
+keycloak:
+  replicaCount: 1
+  image:
+    repository: uselagoon/keycloak
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: webhook.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+keycloakDB:
+  replicaCount: 1
+  image:
+    repository: uselagoon/keycloak-db
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 3306
+
+  podAnnotations:
+    appuio.ch/backupcommand: >
+      /bin/sh -c "mysqldump --max-allowed-packet=500M --events --routines
+      --quick --add-locks --no-autocommit --single-transaction --all-databases"
+    backup.appuio.ch/file-extension: .keycloak-db.sql
+
+  securityContext: {}
+
+  resources: {}
+
+broker:
+  replicaCount: 3
+  image:
+    repository: uselagoon/broker
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  service:
+    type: ClusterIP
+    ports:
+      epmd: 4369
+      amqp: 5672
+      http: 15672
+      metrics: 15692
+    amqpExternal:
+      enabled: false
+      type: LoadBalancer
+      port: 5672
+
+  serviceMonitor:
+    enabled: true
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  serviceAccount:
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname
+    # template
+    name: ""
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: broker.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+
+authServer:
+  replicaCount: 2
+  image:
+    repository: uselagoon/auth-server
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+webhooks2tasks:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/webhooks2tasks
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+webhookHandler:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/webhook-handler
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: webhook.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+ui:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/ui
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: ui.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+backupHandler:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/backup-handler
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: backup.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+autoIdler:
+  enabled: true
+  image:
+    repository: uselagoon/auto-idler
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+storageCalculator:
+  enabled: true
+  image:
+    repository: uselagoon/storage-calculator
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+logs2slack:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/logs2slack
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+
+logs2webhook:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/logs2webhook
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+logs2microsoftteams:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/logs2microsoftteams
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+logs2rocketchat:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/logs2rocketchat
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  additionalEnvs:
+  #   FOO: Bar
+
+logs2email:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/logs2email
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+drushAlias:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/drush-alias
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  ingress:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+    - host: drush-alias.example.com
+      paths:
+      - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+ssh:
+  replicaCount: 2
+  image:
+    repository: uselagoon/ssh
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  service:
+    type: ClusterIP
+    port: 2020
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+sshPortal:
+  enabled: false
+  replicaCount: 2
+  image:
+    repository: testlagoon/ssh-portal
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "pr-2179"
+
+  service:
+    type: ClusterIP
+    port: 2222
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  serviceAccount:
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname
+    # template
+    name: ""
+
+controllerhandler:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: uselagoon/controllerhandler
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  podAnnotations: {}
+
+  securityContext: {}
+
+  resources: {}
+
+  additionalEnvs:
+  #   FOO: Bar
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80

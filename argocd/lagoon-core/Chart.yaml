@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: v2.0.0
+description: 'A Helm chart for Kubernetes which deploys Lagoon''s core components. '
+home: https://github.com/uselagoon/lagoon-charts
+icon: https://raw.githubusercontent.com/uselagoon/lagoon-charts/main/icon.png
+maintainers:
+- email: scott.leggett@amazee.io
+  name: smlx
+  url: https://amazee.io
+name: lagoon-core
+type: application
+version: 0.55.0

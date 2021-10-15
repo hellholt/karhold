@@ -1,0 +1,104 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lagoon-core
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: lagoon-core
+    server: {{ .Values.spec.destination.server }}
+  project: default
+  source:
+    path: {{ .Values.spec.source.repoPath }}/lagoon-core
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    helm:
+      values: |
+        harborAdminPassword: 'omgiloveyou'
+        elasticsearchURL: "http://logs.example.com/"
+        harborURL: "https://harbor-core.{{ .Values.spec.clusterFQDNs.private }}/"
+        api:
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-api.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-api.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-keycloak.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-keycloak.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+        broker:
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-broker.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-broker.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+        webhookHandler:
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-webhook-handler.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-webhook-handler.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+        ui:
+          enabled: yes
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-ui.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-ui.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+        backupHandler:
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-backup.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-backup.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+        drushAlias:
+          ingress:
+            enabled: yes
+            hosts:
+            - host: lagoon-drush-alias.{{ .Values.spec.clusterFQDNs.private }}
+              paths:
+              - /
+            - host: lagoon-drush-alias.{{ .Values.spec.clusterFQDNs.personal }}
+              paths:
+              - /
+        sshPortal:
+          enabled: yes
+
+  syncPolicy:
+    automated:
+      prune: yes
+      selfHeal: yes
+      allowEmpty: yes
+    syncOptions:
+      - Validate=false
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
