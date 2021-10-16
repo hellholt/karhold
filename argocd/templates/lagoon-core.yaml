@@ -43,6 +43,7 @@ spec:
             - host: lagoon-api.{{ .Values.spec.clusterFQDNs.personal }}
               paths:
               - /
+        keycloak:
           ingress:
             enabled: yes
             hosts:
