@@ -1,0 +1,17 @@
+apiVersion: v2
+appVersion: 2e5e92f
+dependencies:
+- name: gatekeeper
+  repository: https://open-policy-agent.github.io/gatekeeper/charts
+  version: ~3.3.0
+description: A Helm chart for Kubernetes that installs the gatekeeper admission controller
+  and policy for Lagoon.
+home: https://github.com/amazeeio/charts
+icon: https://raw.githubusercontent.com/uselagoon/lagoon-charts/main/icon.png
+maintainers:
+- email: scott.leggett@amazee.io
+  name: smlx
+  url: https://amazee.io
+name: lagoon-gatekeeper
+type: application
+version: 0.3.1

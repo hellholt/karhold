@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lagoon-remote
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: lagoon-remote
+    server: {{ .Values.spec.destination.server }}
+  project: default
+  source:
+    path: {{ .Values.spec.source.repoPath }}/lagoon-remote
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    helm:
+      values: |
+        imagePullSecrets: []
+        logsDispatcherHost: |-
+          lagoon-logging-logs-dispatcher.lagoon-logging.svc.cluster.local
+
+        # If this value is set, it will create an `mxout` ExternalName service in the
+        # deployed namespace pointing at the given host. This service can then be used
+        # by workloads running in-cluster to connect to a platform-provided mailserver.
+        mxoutHost: ""
+        dockerHost:
+          storage:
+            create: true
+            size: 750Gi
+            className: nfs-client
+        # dbaas-operator provisions database-as-a-service accounts for projects.
+        # Example provider configuration can be found in the dbaas-operator values.yaml
+        # https://github.com/amazeeio/charts/blob/main/charts/dbaas-operator/values.yaml
+        # This subchart is disabled by default for legacy reasons. It will be enabled
+        # by default in future as this is a core Lagoon feature.
+        dbaas-operator:
+          enabled: false
+
+        # lagoon-gatekeeper is a subchart which enforces security policy for Lagoon
+        # workloads. It is currently experimental so it is disabled by default.
+        lagoon-gatekeeper:
+          enabled: false
+
+  syncPolicy:
+    automated:
+      prune: yes
+      selfHeal: yes
+      allowEmpty: yes
+    syncOptions:
+      - Validate=false
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true

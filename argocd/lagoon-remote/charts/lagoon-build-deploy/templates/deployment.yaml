@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lagoon-build-deploy.fullname" . }}
+  labels:
+    {{- include "lagoon-build-deploy.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "lagoon-build-deploy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "lagoon-build-deploy.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "lagoon-build-deploy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: kube-rbac-proxy
+        securityContext:
+          {{- toYaml .Values.kubeRBACProxy.securityContext | nindent 10 }}
+        image: "{{ .Values.kubeRBACProxy.image.repository }}:{{ .Values.kubeRBACProxy.image.tag }}"
+        imagePullPolicy: {{ .Values.kubeRBACProxy.image.pullPolicy }}
+        args:
+        - "--secure-listen-address=0.0.0.0:8443"
+        - "--upstream=http://127.0.0.1:8080/"
+        - "--logtostderr=true"
+        - "--v=10"
+        ports:
+        - containerPort: 8443
+          name: https
+        resources:
+          {{- toYaml .Values.kubeRBACProxy.resources | nindent 10 }}
+      - name: manager
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion}}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - /manager
+        args:
+        - "--metrics-addr=127.0.0.1:8080"
+        - "--enable-leader-election=true"
+        {{- if .Values.rootlessBuildPods }}
+        - "--build-pod-run-as-user=10000"
+        - "--build-pod-run-as-group=0"
+        - "--build-pod-fs-group=10001"
+        {{- end }}
+        {{- with .Values.lagoonFeatureFlagForceRootlessWorkload }}
+        - "--lagoon-feature-flag-force-rootless-workload={{ . }}"
+        {{- end }}
+        {{- with .Values.lagoonFeatureFlagDefaultRootlessWorkload }}
+        - "--lagoon-feature-flag-default-rootless-workload={{ . }}"
+        {{- end }}
+        {{- with .Values.lagoonFeatureFlagForceIsolationNetworkPolicy }}
+        - "--lagoon-feature-flag-force-isolation-network-policy={{ . }}"
+        {{- end }}
+        {{- with .Values.lagoonFeatureFlagDefaultIsolationNetworkPolicy }}
+        - "--lagoon-feature-flag-default-isolation-network-policy={{ . }}"
+        {{- end }}
+        {{- with .Values.extraArgs }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        env:
+        {{- range $name, $value := .Values.extraEnvs }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        - name: LAGOON_TARGET_NAME
+          value: {{ required "A valid .Values.lagoonTargetName required!" .Values.lagoonTargetName | quote }}
+        {{- with .Values.overrideBuildDeployImage }}
+        - name: OVERRIDE_BUILD_DEPLOY_DIND_IMAGE
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.taskSSHHost }}
+        - name: TASK_SSH_HOST
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.taskSSHPort }}
+        - name: TASK_SSH_PORT
+          value: {{ . | quote }}
+        {{- end }}
+        {{- with .Values.taskAPIHost }}
+        - name: TASK_API_HOST
+          value: {{ . | quote }}
+        {{- end }}
+        - name: PENDING_MESSAGE_CRON
+          value: {{ .Values.pendingMessageCron | quote }}
+        - name: RABBITMQ_HOSTNAME
+          value: {{ required "A valid .Values.rabbitMQHostname required!" .Values.rabbitMQHostname | quote }}
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lagoon-build-deploy.fullname" . }}
+              key: RABBITMQ_PASSWORD
+        - name: RABBITMQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "lagoon-build-deploy.fullname" . }}
+              key: RABBITMQ_USERNAME
+        - name: NAMESPACE_PREFIX
+          value: {{ .Values.namespacePrefix | quote }}
+        - name: CONTROLLER_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

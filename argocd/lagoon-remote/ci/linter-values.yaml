@@ -1,0 +1,25 @@
+lagoon-build-deploy:
+  enabled: true
+  rabbitMQUsername: lagoon
+  rabbitMQPassword: ci
+  rabbitMQHostname: lagoon-core-broker
+  lagoonTargetName: ci-local-control-k8s
+  taskSSHHost: lagoon-core-ssh.lagoon.svc
+  taskSSHPort: 2020
+  taskAPIHost: http://lagoon-core-api.lagoon.svc:80
+
+dockerHost:
+  image:
+    repository: uselagoon/docker-host
+  storage:
+    size: 50Gi
+
+imageTag: ""
+
+dbaas-operator:
+  enabled: true
+
+lagoon-gatekeeper:
+  enabled: false
+
+mxoutHost: mxout1.example.com

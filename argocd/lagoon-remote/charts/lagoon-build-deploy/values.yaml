@@ -1,0 +1,89 @@
+# the following values are requried and have no sensible default
+
+lagoonTargetName: ""
+rabbitMQHostname: ""
+rabbitMQPassword: ""
+rabbitMQUsername: ""
+taskSSHHost: ""
+taskSSHPort: ""
+taskAPIHost: ""
+
+# if using controller namespace prefixing, define that prefix here
+# limited to 8 characters (will be truncated by controller if it exceeds this)
+namespacePrefix: ""
+
+# The following values are optional. They tell the build-deploy controller to
+# set an environment variable on the build pods which enforces the state of the
+# feature flag. Valid values are `enabled` or `disabled`.
+
+# lagoonFeatureFlagForceRootlessWorkload: enabled
+# lagoonFeatureFlagDefaultRootlessWorkload: enabled
+# lagoonFeatureFlagForceIsolationNetworkPolicy: disabled
+# lagoonFeatureFlagDefaultIsolationNetworkPolicy: disabled
+
+# the following values are defaults which may be overridden
+
+# rootlessBuildPods tells the build-deploy controller to create build pods
+# which do not run as root. See https://github.com/amazeeio/lagoon/pull/2481
+# for details.
+rootlessBuildPods: false
+
+# If the controller is running in an openshift,
+# then the argument `--is-openshift=true` should be added
+extraArgs:
+
+# add extra environment variables if required
+extraEnvs:
+
+pendingMessageCron: "*/5 * * * *"
+
+# The controller will use `uselagoon/kubectl-build-deploy-dind:latest` by
+# default, but this can be overridden here.
+overrideBuildDeployImage: ""
+
+# override .Chart.Name
+nameOverride: ""
+
+image:
+  repository: amazeeio/lagoon-builddeploy
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8443
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# this is a sidecar in the same pod as the lagoonBuildDeploy container
+kubeRBACProxy:
+  image:
+    repository: gcr.io/kubebuilder/kube-rbac-proxy
+    pullPolicy: IfNotPresent
+    tag: v0.4.1
+
+  securityContext: {}
+
+  resources: {}

@@ -1,0 +1,32 @@
+apiVersion: v2
+appVersion: v2.0.0
+dependencies:
+- condition: lagoon-build-deploy.enabled
+  name: lagoon-build-deploy
+  repository: https://uselagoon.github.io/lagoon-charts/
+  version: ~0.7.0
+- condition: dioscuri.enabled
+  name: dioscuri
+  repository: https://amazeeio.github.io/charts/
+  version: ~0.3.0
+- condition: dbaas-operator.enabled
+  name: dbaas-operator
+  repository: https://amazeeio.github.io/charts/
+  version: ~0.2.0
+- condition: lagoon-gatekeeper.enabled
+  name: lagoon-gatekeeper
+  repository: https://uselagoon.github.io/lagoon-charts/
+  version: ~0.3.1
+description: A Helm chart to run a lagoon-remote
+home: https://github.com/uselagoon/lagoon-charts
+icon: https://raw.githubusercontent.com/uselagoon/lagoon-charts/main/icon.png
+maintainers:
+- email: michael@amazee.com
+  name: schnitzel
+  url: https://amazee.io
+- email: scott.leggett@amazee.io
+  name: smlx
+  url: https://amazee.io
+name: lagoon-remote
+type: application
+version: 0.36.0
